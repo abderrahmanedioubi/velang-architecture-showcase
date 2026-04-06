@@ -17,7 +17,7 @@ class TranslationAutomator:
     and performing optimized, state-aware updates to the database.
     
     Features:
-    1. **Batch Merging**: Aggregates JSON translation outputs from AI-agents or LSPs.
+    1. **Batch Merging**: Aggregates JSON translation outputs from distributed sources.
     2. **JSONB Content Merging**: Intelligently updates nested L10N objects without data loss.
     3. **Rate-Limited Syncing**: Ensures database stability during high-volume updates.
     4. **Audit Logging**: Tracks successes and failures for high-integrity data migration.

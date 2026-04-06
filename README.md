@@ -1,13 +1,13 @@
 # Velang: EdTech SaaS Platform Architecture
 
-**Note**: This is a showcase repository demonstrating the system architecture and key code implementations of **Velang**. The full repository remains private.
+**Note**: This repository contains the system architecture and core implementations of **Velang**.
 
 ## 🚀 Overview
 Velang is a cross-platform (Mobile & Web) EdTech application optimized for German language acquisition (A0-B2). It utilizes research-backed pedagogy and the **FSRS (Free Spaced Repetition Scheduler)** algorithm to generate highly efficient, personalized learning curriculums.
 
 **Live Production**: [**velang.app**](https://velang.app)
 
-This repository demonstrates my role as a **System Architect, AI Orchestrator, and Process Analyst** for the Velang project. 
+This repository demonstrates my role as a **System Architect and Lead Software Engineer** for the Velang project. 
 
 ## 🏗 System Architecture
 
@@ -60,15 +60,11 @@ Beyond the consumer product, I built a suite of custom internal tools to solve i
 - [`engineering/localization_manager.py`](./engineering/localization_manager.py): Automation tool for merging and validating multi-language .arb files.
 - [`engineering/translation_automator.py`](./engineering/translation_automator.py): Batch-processing and DB synchronization for AI-generated translations.
 
-### 3. Process Analysis & Governance
-A critical part of the project was performing high-level process analysis, risk assessment, and technical debt management.
-- **Audit Reports**: I maintained detailed logs of the project's health, including security audits and GDPR compliance checks.
-- **Showcase**: See [`docs/audit_summary.md`](./docs/audit_summary.md) for a detailed look at the process analysis dashboard.
 
-### 4. Curriculum & Pedagogical Design
+### 3. Curriculum & Pedagogical Design
 I designed the modular learning path (A1-B2 Goethe Modules), integrating structured German grammar rules with vocabulary frequency lists. This involved architecting the PostgreSQL schema to handle complex card relationships and hierarchical modules.
 
-### 5. Algorithmic Intelligence
+### 4. Algorithmic Intelligence
 I successfully integrated and optimized the FSRS algorithm within our production environment, ensuring that high-performance spaced-repetition logic is available cross-platform with sub-millisecond latency.
 - **Showcase**: [`scripts/fsrs_engine.py`](./scripts/fsrs_engine.py).
 
@@ -78,7 +74,6 @@ I successfully integrated and optimized the FSRS algorithm within our production
 - [`api/verify_payment.js`](./api/verify_payment.js): Shows secure backend integration and transactional database management.
 - [`scripts/fsrs_engine.py`](./scripts/fsrs_engine.py): Implementation example of the FSRS scheduling logic in Python.
 - [`engineering/translation_automator.py`](./engineering/translation_automator.py): Custom ETL tool for localization management.
-- [`docs/audit_summary.md`](./docs/audit_summary.md): Summary of the project's process analysis and governance metrics.
 
 ---
 **Lead Developer & Architect**: [abderrahmanedioubi](https://github.com/abderrahmanedioubi)
