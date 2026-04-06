@@ -5,6 +5,8 @@
 ## 🚀 Overview
 Velang is a cross-platform (Mobile & Web) EdTech application optimized for German language acquisition (A0-B2). It utilizes research-backed pedagogy and the **FSRS (Free Spaced Repetition Scheduler)** algorithm to generate highly efficient, personalized learning curriculums.
 
+**Live Production**: [**velang.app**](https://velang.app)
+
 This repository demonstrates my role as a **System Architect, AI Orchestrator, and Process Analyst** for the Velang project. 
 
 ## 🏗 System Architecture
