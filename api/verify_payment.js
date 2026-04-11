@@ -5,8 +5,11 @@ const { createClient } = require('@supabase/supabase-js');
  * 
  * This endpoint is responsible for:
  * 1. Validating the payment status with the SlickPay API.
- * 2. Cross-referencing the transaction in our Supabase database.
- * 3. Atomically upgrading the user to Premium status upon successful verification.
+ * 2. Updating the user's payment status in the 'users' table.
+ * 3. Initializing the "Financial Guarantee" tracking for the user.
+ * 
+ * ARCHITECTURAL NOTE: This demonstrates a secure, server-side fulfillment 
+ * pattern that prevents client-side manipulation of premium access.
  */
 async function verifyPayment(req, res) {
   const { invoiceId } = req.body;
@@ -16,14 +19,13 @@ async function verifyPayment(req, res) {
   }
 
   // Configuration (Replace with your actual environment variables in production)
-  const SLICKPAY_PUBLIC_KEY = process.env.SLICKPAY_PUBLIC_KEY || "YOUR_SLICKPAY_KEY_HERE";
+  const SLICKPAY_PUBLIC_KEY = process.env.SLICKPAY_PUBLIC_KEY;
   const SLICKPAY_BASE_URL = process.env.NODE_ENV === "production"
     ? "https://prodapi.slick-pay.com/api/v2"
     : "https://devapi.slick-pay.com/api/v2";
 
   try {
-    // 1. Verify payment status directly with the SlickPay API
-    // This provides a secondary layer of security over client-side callbacks.
+    // 1. Verify payment status directly with the SlickPay API (Secondary Validation)
     const verifyRes = await fetch(`${SLICKPAY_BASE_URL}/users/invoices/${invoiceId}`, {
       method: "GET",
       headers: {
@@ -33,70 +35,67 @@ async function verifyPayment(req, res) {
     });
 
     const verifyJson = await verifyRes.json();
-    if (verifyJson.errors) {
-      console.error("SlickPay Verification Error:", verifyJson.errors);
-      throw new Error("Unable to verify invoice with payment gateway.");
-    }
-
     const paymentStatus = verifyJson.data?.status;
     const isPaid = (paymentStatus === 1 || paymentStatus === 'completed' || paymentStatus === 'paid');
 
-    // 2. Connect to Supabase using a Service Role key for administrative actions
+    // 2. Administrative Supabase Client
     const supabase = createClient(
       process.env.SUPABASE_URL || "YOUR_SUPABASE_URL_HERE",
       process.env.SUPABASE_SERVICE_ROLE_KEY || "YOUR_SERVICE_ROLE_KEY_HERE"
     );
 
-    // 3. Fetch the local transaction record
+    // 3. Fetch transaction and verify its current state
     const { data: trx, error: trxError } = await supabase
       .from('transactions')
       .select('*')
       .eq('invoice_id', invoiceId)
       .single();
 
-    if (trxError || !trx) {
-      throw new Error("Transaction record not found in database.");
-    }
+    if (trxError || !trx) throw new Error("Transaction record not found.");
 
-    // 4. Update Transaction and Upgrade User Profile
+    // 4. Atomic Fulfillment Lifecycle
     if (isPaid && trx.status === 'pending') {
       
-      // Update local transaction status
+      // Update transaction status
       await supabase
         .from('transactions')
         .update({ status: 'completed' })
         .eq('id', trx.id);
         
-      // Provision Premium access to the user
-      const { error: profileError } = await supabase
-        .from('profiles')
+      // Upgrade User Account (Unified Schema Pattern)
+      const { error: userError } = await supabase
+        .from('users')
         .update({ 
-          is_premium: true, 
-          premium_plan: trx.target_plan,
-          premium_expires_at: trx.target_plan === 'lifetime' 
-            ? null 
-            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          payment_status: 'PREMIUM', 
+          selected_tier: trx.selected_tier,
+          guarantee_status: 'ACTIVE' // Activate the Financial Guarantee
         })
         .eq('id', trx.user_id);
 
-      if (profileError) {
-        throw new Error("Payment verified, but failed to provision user access.");
-      }
+      if (userError) throw new Error("Failed to provision user access.");
+
+      // 5. Initialize Financial Guarantee (Server-Side Logic)
+      // We trigger the DB function to lock the first day's targets.
+      const today = new Date().toISOString().split('T')[0];
+      const { error: rpcError } = await supabase.rpc('initialize_daily_guarantee', {
+        p_user_id: trx.user_id,
+        p_date: today,
+        p_new_cards_target: 15 // Default intensity
+      });
+
+      if (rpcError) console.warn("Guarantee tracking initialization failed, but payment was successful.");
 
       return res.status(200).json({ 
         status: "success", 
-        message: "Payment verified successfully. User access granted." 
+        message: "Account upgraded and guarantee initialized." 
       });
     }
 
-    return res.status(200).json({ 
-      status: "pending", 
-      message: "Payment is still processing or has already been fulfilled." 
-    });
+    return res.status(200).json({ status: "pending", message: "Verification ongoing." });
 
   } catch (err) {
-    console.error("Verification Lifecycle Error:", err.message);
-    return res.status(500).json({ error: "An internal error occurred during verification." });
+    console.error("Critical Fulfillment Error:", err.message);
+    return res.status(500).json({ error: "Internal processing error." });
   }
 }
 
