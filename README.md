@@ -2,7 +2,7 @@
 
 > Architecture showcase for a production E-Learning SaaS. The main codebase is private.
 
-**Live:** [velang.app](https://velang.app) · **Status:** Pre-launch (800+ pre-registered users)
+**Live:** [velang.app](https://velang.app) · **Status:** Pre-launch (10000+ pre-registered users)
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white)
