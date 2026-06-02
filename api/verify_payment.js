@@ -56,6 +56,15 @@ async function verifyPayment(req, res) {
     // 4. Atomic Fulfillment Lifecycle
     if (isPaid && trx.status === 'pending') {
       
+      // Fetch user to check guarantee_ever_voided
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('guarantee_ever_voided')
+        .eq('id', trx.user_id)
+        .single();
+
+      const canActivateGuarantee = userProfile && !userProfile.guarantee_ever_voided;
+
       // Update transaction status
       await supabase
         .from('transactions')
@@ -68,22 +77,24 @@ async function verifyPayment(req, res) {
         .update({ 
           payment_status: 'PREMIUM', 
           selected_tier: trx.selected_tier,
-          guarantee_status: 'ACTIVE' // Activate the Financial Guarantee
+          ...(canActivateGuarantee ? { guarantee_status: 'ACTIVE' } : {}) // Only activate if never voided
         })
         .eq('id', trx.user_id);
 
       if (userError) throw new Error("Failed to provision user access.");
 
       // 5. Initialize Financial Guarantee (Server-Side Logic)
-      // We trigger the DB function to lock the first day's targets.
-      const today = new Date().toISOString().split('T')[0];
-      const { error: rpcError } = await supabase.rpc('initialize_daily_guarantee', {
-        p_user_id: trx.user_id,
-        p_date: today,
-        p_new_cards_target: 15 // Default intensity
-      });
+      if (canActivateGuarantee) {
+        // We trigger the DB function to lock the first day's targets.
+        const today = new Date().toISOString().split('T')[0];
+        const { error: rpcError } = await supabase.rpc('initialize_daily_guarantee', {
+          p_user_id: trx.user_id,
+          p_date: today,
+          p_new_cards_target: 15 // Default intensity
+        });
 
-      if (rpcError) console.warn("Guarantee tracking initialization failed, but payment was successful.");
+        if (rpcError) console.warn("Guarantee tracking initialization failed, but payment was successful.");
+      }
 
       return res.status(200).json({ 
         status: "success", 
